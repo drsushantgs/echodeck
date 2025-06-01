@@ -8,18 +8,24 @@ import Heading from "@/components/ui/Heading";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 
+interface Subject {
+  uuid_id: string;
+  subject_name: string;
+}
+
 export default function BuySubject() {
   const { id: subjectId } = useParams();
-  const [subject, setSubject] = useState<any>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
 
   useEffect(() => {
     async function fetchSubject() {
       const { data } = await supabase
         .from("subjects")
-        .select("*")
+        .select("uuid_id, subject_name")
         .eq("uuid_id", subjectId)
         .single();
-      setSubject(data);
+
+      setSubject(data as Subject | null);
     }
     fetchSubject();
   }, [subjectId]);
