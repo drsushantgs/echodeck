@@ -1,0 +1,56 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap");
+/* =========================================
+   1. Import Tailwind Base, Components, Utilities
+   ========================================= */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   2. Google Font: Space Grotesk (Bold)
+   ========================================= */
+
+
+/* =========================================
+   3. EchoDeck Brand Colors (light & dark)
+   ========================================= */
+:root {
+  --brand-navy: #0A1931;
+  --brand-teal: #14B6B8;
+  --brand-coral: #FF715B;
+  --brand-ivory: #F8F7F4;
+  --grey-700:    #6B7C93;
+  --grey-300:    #E2E6EA;
+  --grey-50:     #F0F1F2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-ivory: #1B1E23;
+    --grey-50:    #262A30;
+  }
+}
+
+/* =========================================
+   4. Base Element Styles
+   ========================================= */
+body {
+  background-color: var(--brand-ivory);
+  color: var(--brand-navy);
+  font-family: "Inter", sans-serif; /* fallback for regular text */
+}
+
+/* Override default headings to use Space Grotesk */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+}
+
+/* Links by default use brand-teal */
+a {
+  color: var(--brand-teal);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}

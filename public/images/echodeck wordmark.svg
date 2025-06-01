@@ -1,0 +1,19 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap');
+    .wordmark{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:110px;
+              letter-spacing:-0.02em;fill:#0A1931;}
+    .echo{fill:none;stroke:#14B6B8;stroke-width:14;stroke-linecap:round;}
+  </style>
+
+  <!-- Echo arcs: flatter, wider -->
+  <g transform="translate(360 190)">
+    <path class="echo" d="M -170 0 A 160 150 0 0 1 170 0" />
+    <path class="echo" d="M -140 0 A 135 125 0 0 1 140 0" />
+    <path class="echo" d="M -110 0 A 110 100 0 0 1 110 0" />
+  </g>
+
+  <text x="50%" y="290" text-anchor="middle" class="wordmark">EchoDeck</text>
+</svg>
