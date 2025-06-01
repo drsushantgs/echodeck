@@ -53,6 +53,7 @@ export default function HomePage() {
             intent="secondary"
             size="sm"
             onClick={async () => {
+              const { supabase } = await import("@/lib/supabaseClient");
               await supabase.auth.signOut();
               window.location.href = "/";
             }}
