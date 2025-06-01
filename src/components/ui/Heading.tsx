@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   level?: 1 | 2 | 3;
   className?: string;
+  children: React.ReactNode;
 }
 
 const headingTags = {
@@ -21,7 +22,6 @@ export default function Heading({
   ...props
 }: HeadingProps) {
   const Tag = headingTags[level] as keyof JSX.IntrinsicElements;
-  const TagComponent = Tag as any;
 
   // Base styles: use font-display (Space Grotesk), color brand-navy
   const baseStyles = "font-display text-brand-navy text-center mb-4";
@@ -33,11 +33,11 @@ export default function Heading({
   };
 
   return (
-    <TagComponent
+    <Tag
       className={cn(baseStyles, sizeStyles[level], className)}
       {...props}
     >
       {children}
-    </TagComponent>
+    </Tag>
   );
 }
