@@ -84,7 +84,7 @@ export default function SubjectDetail() {
             Access Denied
           </Heading>
           <p className="text-grey-light">
-            You haven’t purchased "{subjectName}" yet.
+            You haven&apos;t purchased "{subjectName}" yet.
           </p>
           <Link href={`/buy/${subjectUuid}`}>
             <Button intent="primary" size="md" className="mt-6">
