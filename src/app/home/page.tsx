@@ -4,18 +4,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@/lib/useUser";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+
+interface Subject {
+  uuid_id: string;
+  subject_name: string;
+}
 
 export default function HomePage() {
   const { user, loading } = useUser();
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [purchases, setPurchases] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: subjectsData } = await supabase.from("subjects").select("*");
-      setSubjects(subjectsData || []);
+      const { data: subjectsData } = await supabase.from("subjects").select("uuid_id, subject_name");
+      setSubjects(subjectsData as Subject[] || []);
 
       if (user) {
         const { data: purchasesData } = await supabase
@@ -24,7 +29,7 @@ export default function HomePage() {
           .eq("user_id", user.id)
           .eq("payment_confirmed", true);
 
-        const purchasedIds = purchasesData?.map((p) => p.subject_uuid) || [];
+        const purchasedIds = (purchasesData || []).map((p: { subject_uuid: string }) => p.subject_uuid);
         setPurchases(purchasedIds);
       }
     };
