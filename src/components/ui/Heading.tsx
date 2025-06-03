@@ -1,6 +1,6 @@
 // src/components/ui/Heading.tsx
 
-import React, { JSX } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
@@ -21,7 +21,7 @@ export default function Heading({
   children,
   ...props
 }: HeadingProps) {
-  const Tag = headingTags[level] as keyof JSX.IntrinsicElements;
+  const Tag = headingTags[level] as React.ElementType;
 
   // Base styles: use font-display (Space Grotesk), color brand-navy
   const baseStyles = "font-display text-brand-navy text-center mb-4";

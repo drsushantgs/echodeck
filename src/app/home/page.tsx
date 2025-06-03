@@ -1,8 +1,8 @@
-'use client';
+"use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@/lib/useUser";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -18,8 +18,12 @@ export default function HomePage() {
   const [purchases, setPurchases] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: subjectsData } = await supabase.from("subjects").select("uuid_id, subject_name");
+    async function fetchData() {
+      const { supabase } = await import("@/lib/supabaseClient");
+
+      const { data: subjectsData } = await supabase
+        .from("subjects")
+        .select("uuid_id, subject_name");
       setSubjects(subjectsData as Subject[] || []);
 
       if (user) {
@@ -50,6 +54,7 @@ export default function HomePage() {
             intent="secondary"
             size="sm"
             onClick={async () => {
+              const { supabase } = await import("@/lib/supabaseClient");
               await supabase.auth.signOut();
               window.location.href = "/";
             }}
@@ -91,7 +96,7 @@ export default function HomePage() {
       {/* Footer with legal link */}
       <footer className="text-xs text-grey-700 text-center py-6">
         <Link href="/info" className="hover:underline">
-          Terms & Policies
+          Terms &amp; Policies
         </Link>
       </footer>
     </>

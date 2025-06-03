@@ -1,10 +1,9 @@
 // src/app/auth/page.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { supabase } from "@/lib/supabaseClient";
 import Heading from "@/components/ui/Heading";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
@@ -19,6 +18,7 @@ export default function AuthForm() {
   const handleSubmit = async () => {
     setLoading(true);
 
+    const { supabase } = await import("@/lib/supabaseClient");
     let error = null;
     if (isSignUp) {
       ({ error } = await supabase.auth.signUp({ email, password }));
