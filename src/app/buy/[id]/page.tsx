@@ -11,25 +11,65 @@ import Link from "next/link";
 interface Subject {
   uuid_id: string;
   subject_name: string;
+  price_pence: number;
 }
 
 export default function BuySubject() {
   const { id: subjectId } = useParams();
   const [subject, setSubject] = useState<Subject | null>(null);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   useEffect(() => {
     async function fetchSubject() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("subjects")
-        .select("uuid_id, subject_name")
+        .select("uuid_id, subject_name, price_pence")
         .eq("uuid_id", subjectId)
         .single();
 
-      setSubject(data as Subject | null);
+      if (error) {
+        console.error("Error fetching subject:", error);
+        setSubject(null);
+      } else {
+        setSubject(data as Subject);
+      }
     }
     fetchSubject();
   }, [subjectId]);
 
+  const handleCheckout = async () => {
+    setLoadingCheckout(true);
+
+    const response = await fetch("/api/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ subjectUuid: subjectId }),
+    });
+
+    //Dump raw response for debugging
+    const raw = await response.text();
+    console.log("Raw response from checkout API:", raw);
+    //now attempt to parse JSON
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error("Failed to parse JSON from /api/checkout:", parseErr);
+      alert("Unexpected server response. Check console for details.");
+      setLoadingCheckout(false);
+      return;
+    } 
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      console.error("Checkout error:", data.error);
+      alert("There was an error processing your purchase. Please try again later.");
+    }
+    setLoadingCheckout(false);
+  };
   if (!subject) {
     return (
       <div className="min-h-screen flex items-center justify-center text-grey text-center px-4">
@@ -55,14 +95,15 @@ export default function BuySubject() {
           Unlock full access to this subject’s flashcards and track your progress.
         </p>
 
-        <p className="text-lg font-semibold mb-8">Price: £3.99</p>
+        <p className="text-lg font-semibold mb-8">Price: £{(subject.price_pence / 100).toFixed(2)}</p>
 
         <Button
           intent="primary"
           className="w-full py-3 text-lg"
-          onClick={() => alert('Stripe Checkout coming soon!')}
+          onClick={handleCheckout}
+          disabled={loadingCheckout}
         >
-          Buy with Stripe
+          {loadingCheckout ? "Redirecting..." : "Buy Now"}
         </Button>
       </div>
      </main>
