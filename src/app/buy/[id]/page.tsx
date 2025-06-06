@@ -40,18 +40,23 @@ export default function BuySubject() {
   const handleCheckout = async () => {
     setLoadingCheckout(true);
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Make sure to include credentials so the Supabase cookies are sent:
+    // ─────────────────────────────────────────────────────────────────────────────
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include", // ← send Supabase cookies
       body: JSON.stringify({ subjectUuid: subjectId }),
     });
 
-    //Dump raw response for debugging
+    // Dump raw response for debugging
     const raw = await response.text();
     console.log("Raw response from checkout API:", raw);
-    //now attempt to parse JSON
+
+    // Now attempt to parse JSON
     let data;
     try {
       data = JSON.parse(raw);
@@ -60,19 +65,21 @@ export default function BuySubject() {
       alert("Unexpected server response. Check console for details.");
       setLoadingCheckout(false);
       return;
-    } 
+    }
 
     if (data.url) {
+      // Redirect to Stripe Checkout
       window.location.href = data.url;
     } else {
       console.error("Checkout error:", data.error);
       alert("There was an error processing your purchase. Please try again later.");
+      setLoadingCheckout(false);
     }
-    setLoadingCheckout(false);
   };
+
   if (!subject) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-grey text-center px-4">
+      <div className="min-h-screen flex items-center justify-center text-gray-600 text-center px-4">
         <p>Loading subject information…</p>
       </div>
     );
@@ -80,22 +87,24 @@ export default function BuySubject() {
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white border p-10 rounded-xl shadow-1g">
+      <div className="max-w-md mx-auto bg-white border p-10 rounded-xl shadow-lg">
         <Link
           href="/home"
-          className="block text-teal font-semibold hover:underline mb-6"
+          className="block text-teal-600 font-semibold hover:underline mb-6"
         >
           ← Back to Home
         </Link>
         <Heading level={1} className="mb-6">
-            {subject.subject_name}
+          {subject.subject_name}
         </Heading>
 
         <p className="text-gray-700 mb-8">
           Unlock full access to this subject’s flashcards and track your progress.
         </p>
 
-        <p className="text-lg font-semibold mb-8">Price: £{(subject.price_pence / 100).toFixed(2)}</p>
+        <p className="text-lg font-semibold mb-8">
+          Price: £{(subject.price_pence / 100).toFixed(2)}
+        </p>
 
         <Button
           intent="primary"
@@ -106,6 +115,6 @@ export default function BuySubject() {
           {loadingCheckout ? "Redirecting..." : "Buy Now"}
         </Button>
       </div>
-     </main>
+    </main>
   );
 }
