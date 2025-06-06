@@ -30,9 +30,8 @@ function getStripe(): Stripe {
 export async function POST(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────────────────────
   // STEP 1: Call cookies() *synchronously* (do NOT await!)
-  //        This gives you a ReadonlyRequestCookies object immediately.
   // ─────────────────────────────────────────────────────────────────────────────
-  const cookieStore = cookies(); // ← remove `await` here
+  const cookieStore = cookies(); // ← NO `await` here
 
   // ─────────────────────────────────────────────────────────────────────────────
   // STEP 2: Load the logged‐in user’s ID via our helper
