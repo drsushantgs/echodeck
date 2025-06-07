@@ -37,6 +37,7 @@ export default function AuthForm() {
     }
 
     const { session, user } = data;
+    console.log("LOGIN: session", session);
 
     if (!session || !user) {
       console.error("Missing session or user after login", { session, user });
@@ -64,7 +65,7 @@ export default function AuthForm() {
         ? "Check your email to confirm your EchoDeck account!"
         : "Logged in to EchoDeck successfully!"
     );
-    router.push("/home");
+    window.location.href = "/home";
   };
 
   return (
