@@ -47,6 +47,7 @@ export default function BuySubject() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-store",
       },
       credentials: "include", // ← send Supabase cookies
       body: JSON.stringify({ subjectUuid: subjectId }),

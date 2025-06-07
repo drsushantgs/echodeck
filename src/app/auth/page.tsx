@@ -7,6 +7,9 @@ import Image from "next/image";
 import Heading from "@/components/ui/Heading";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { createPagesBrowserClient } from "@supabase/auth-helpers-nextjs";
+
+const supabase = createPagesBrowserClient();
 
 export default function AuthForm() {
   const router = useRouter();
@@ -18,26 +21,50 @@ export default function AuthForm() {
   const handleSubmit = async () => {
     setLoading(true);
 
-    const { supabase } = await import("@/lib/supabaseClient");
-    let error = null;
+    let result;
     if (isSignUp) {
-      ({ error } = await supabase.auth.signUp({ email, password }));
+      result = await supabase.auth.signUp({ email, password });
     } else {
-      ({ error } = await supabase.auth.signInWithPassword({ email, password }));
+      result = await supabase.auth.signInWithPassword({ email, password });
     }
 
+    const { error, data } = result;
     setLoading(false);
 
     if (error) {
       alert(error.message);
-    } else {
-      if (isSignUp) {
-        alert("Check your email to confirm your EchoDeck account!");
-      } else {
-        alert("Logged in to EchoDeck successfully!");
-      }
-      router.push("/home");
+      return;
     }
+
+    const { session, user } = data;
+
+    if (!session || !user) {
+      console.error("Missing session or user after login", { session, user });
+      alert("Login failed: missing session or user.");
+      return;
+    }
+
+    const res = await fetch("/auth/callback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ event: "SIGNED_IN", session }),
+    });
+
+    if (!res.ok) {
+      console.error("Failed to sync session to cookie");
+      alert("Something went wrong logging you in. Please try again.");
+      return;
+    }
+
+    alert(
+      isSignUp
+        ? "Check your email to confirm your EchoDeck account!"
+        : "Logged in to EchoDeck successfully!"
+    );
+    router.push("/home");
   };
 
   return (
