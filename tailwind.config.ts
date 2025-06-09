@@ -20,7 +20,7 @@ module.exports = {
         sans: ["Inter", "sans-serif"],
         display: ["Space Grotesk", "sans-serif"],
       },
-    },
+    }
   },
   plugins: [],
 };
