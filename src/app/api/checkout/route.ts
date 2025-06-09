@@ -63,10 +63,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.redirect(session.url!, { status: 303 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Stripe error:", err);
     return NextResponse.json(
-      { error: err.message || "Stripe session creation failed." },
+      { error: (err as Error).message || "Stripe session creation failed." },
       { status: 500 }
     );
   }

@@ -24,7 +24,7 @@ export default async function BuyPage({ params: { id } }: Props) {
   if (!subject || error) {
     return (
       <main className="min-h-screen flex items-center justify-center text-center text-gray-600 px-4">
-        <p>Sorry, that subject doesn't exist or couldn’t be loaded.</p>
+        <p>Sorry, that subject doesn&apos;t exist or couldn&apos;t be loaded.</p>
       </main>
     );
   }
