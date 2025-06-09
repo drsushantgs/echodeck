@@ -4,11 +4,12 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Heading from "@/components/ui/Heading";
 
-export default async function BuyPage({
-  params,
-}: {
-  params: { id: string };
+// Don't destructure `params` directly. Await it like this:
+export default async function BuyPage(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await props.params;
+
   const supabase = createSupabaseServerClient();
   const {
     data: { user },
@@ -19,7 +20,7 @@ export default async function BuyPage({
   const { data: subject, error } = await supabase
     .from("subjects")
     .select("uuid_id, subject_name, price_pence")
-    .eq("uuid_id", params.id)
+    .eq("uuid_id", id)
     .maybeSingle();
 
   if (!subject || error) {
