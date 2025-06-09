@@ -1,24 +1,25 @@
-// src/app/buy/[id]/page.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Heading from "@/components/ui/Heading";
 
-interface Props {
+export default async function BuyPage({
+  params,
+}: {
   params: { id: string };
-}
-
-export default async function BuyPage({ params: { id } }: Props) {
+}) {
   const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth");
 
   const { data: subject, error } = await supabase
     .from("subjects")
     .select("uuid_id, subject_name, price_pence")
-    .eq("uuid_id", id)
+    .eq("uuid_id", params.id)
     .maybeSingle();
 
   if (!subject || error) {
@@ -32,7 +33,10 @@ export default async function BuyPage({ params: { id } }: Props) {
   return (
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto bg-white border p-10 rounded-xl shadow-lg">
-        <Link href="/home" className="block text-teal-600 font-semibold hover:underline mb-6">
+        <Link
+          href="/home"
+          className="block text-teal-600 font-semibold hover:underline mb-6"
+        >
           ← Back to Home
         </Link>
 
