@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import StudyClient from "./StudyClient";
 
-interface Props {
-  params: { id: string };
-}
+export default async function StudyPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: subjectUuid } = await params;
 
-export default async function StudyPage({ params }: Props) {
-  const subjectUuid = params.id;
   const supabase = createSupabaseServerClient();
 
   const {
@@ -28,7 +29,5 @@ export default async function StudyPage({ params }: Props) {
 
   if (!purchase) redirect(`/subjects/${subjectUuid}`);
 
-  return (
-    <StudyClient userId={user.id} subjectUuid={subjectUuid} />
-  );
+  return <StudyClient userId={user.id} subjectUuid={subjectUuid} />;
 }
