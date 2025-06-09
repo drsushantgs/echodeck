@@ -1,100 +1,41 @@
 // src/app/buy/[id]/page.tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import Heading from "@/components/ui/Heading";
-import Button from "@/components/ui/Button";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import Button from "@/components/ui/Button";
+import Heading from "@/components/ui/Heading";
 
-interface Subject {
-  uuid_id: string;
-  subject_name: string;
-  price_pence: number;
+interface Props {
+  params: { id: string };
 }
 
-export default function BuySubject() {
-  const { id: subjectId } = useParams();
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
+export default async function BuyPage({ params: { id } }: Props) {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    async function fetchSubject() {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("uuid_id, subject_name, price_pence")
-        .eq("uuid_id", subjectId)
-        .single();
+  if (!user) redirect("/auth");
 
-      if (error) {
-        console.error("Error fetching subject:", error);
-        setSubject(null);
-      } else {
-        setSubject(data as Subject);
-      }
-    }
-    fetchSubject();
-  }, [subjectId]);
+  const { data: subject, error } = await supabase
+    .from("subjects")
+    .select("uuid_id, subject_name, price_pence")
+    .eq("uuid_id", id)
+    .maybeSingle();
 
-  const handleCheckout = async () => {
-    setLoadingCheckout(true);
-
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Make sure to include credentials so the Supabase cookies are sent:
-    // ─────────────────────────────────────────────────────────────────────────────
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
-      },
-      credentials: "include", // ← send Supabase cookies
-      body: JSON.stringify({ subjectUuid: subjectId }),
-    });
-
-    // Dump raw response for debugging
-    const raw = await response.text();
-    console.log("Raw response from checkout API:", raw);
-
-    // Now attempt to parse JSON
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (parseErr) {
-      console.error("Failed to parse JSON from /api/checkout:", parseErr);
-      alert("Unexpected server response. Check console for details.");
-      setLoadingCheckout(false);
-      return;
-    }
-
-    if (data.url) {
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-    } else {
-      console.error("Checkout error:", data.error);
-      alert("There was an error processing your purchase. Please try again later.");
-      setLoadingCheckout(false);
-    }
-  };
-
-  if (!subject) {
+  if (!subject || error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600 text-center px-4">
-        <p>Loading subject information…</p>
-      </div>
+      <main className="min-h-screen flex items-center justify-center text-center text-gray-600 px-4">
+        <p>Sorry, that subject doesn't exist or couldn’t be loaded.</p>
+      </main>
     );
   }
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto bg-white border p-10 rounded-xl shadow-lg">
-        <Link
-          href="/home"
-          className="block text-teal-600 font-semibold hover:underline mb-6"
-        >
+        <Link href="/home" className="block text-teal-600 font-semibold hover:underline mb-6">
           ← Back to Home
         </Link>
+
         <Heading level={1} className="mb-6">
           {subject.subject_name}
         </Heading>
@@ -107,14 +48,12 @@ export default function BuySubject() {
           Price: £{(subject.price_pence / 100).toFixed(2)}
         </p>
 
-        <Button
-          intent="primary"
-          className="w-full py-3 text-lg"
-          onClick={handleCheckout}
-          disabled={loadingCheckout}
-        >
-          {loadingCheckout ? "Redirecting..." : "Buy Now"}
-        </Button>
+        <form method="POST" action="/api/checkout">
+          <input type="hidden" name="subjectUuid" value={subject.uuid_id} />
+          <Button intent="primary" className="w-full py-3 text-lg" type="submit">
+            Buy Now
+          </Button>
+        </form>
       </div>
     </main>
   );

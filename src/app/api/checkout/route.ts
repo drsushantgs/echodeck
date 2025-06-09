@@ -1,13 +1,9 @@
 // src/app/api/checkout/route.ts
-
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import {
-  createSupabaseServerClient,
-  getUserIdFromServer,
-} from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabaseRouteClient";
 
 function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -16,64 +12,39 @@ function getStripe(): Stripe {
 }
 
 export async function POST(req: NextRequest) {
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 1: Get the logged-in user from cookies (safely)
-  // ─────────────────────────────────────────────────────────────────────────────
-  const userId = await getUserIdFromServer();
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Not authenticated" },
-      { status: 401 }
-    );
+  const supabase = createSupabaseRouteClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 2: Parse body payload
-  // ─────────────────────────────────────────────────────────────────────────────
-  let payload: { subjectUuid?: string };
-  try {
-    payload = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  // Parse incoming JSON
+  const formData = await req.formData();
+  const subjectUuid = formData.get("subjectUuid") as string;
 
-  const subjectUuid = payload.subjectUuid;
   if (!subjectUuid) {
     return NextResponse.json({ error: "Missing subject UUID." }, { status: 400 });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 3: Fetch subject from Supabase
-  // ─────────────────────────────────────────────────────────────────────────────
-  const supabase = await createSupabaseServerClient();
-  const { data: subject, error: supaError } = await supabase
+  // Fetch subject from Supabase
+  const { data: subject, error: subjectError } = await supabase
     .from("subjects")
     .select("subject_name, stripe_price_id")
     .eq("uuid_id", subjectUuid)
-    .single();
+    .maybeSingle();
 
-  if (supaError || !subject) {
-    console.error("Supabase fetch error:", supaError);
-    return NextResponse.json({ error: "Subject not found." }, { status: 404 });
+  if (!subject || subjectError) {
+    return NextResponse.json({ error: "Subject not found" }, { status: 404 });
   }
 
   if (!subject.stripe_price_id) {
-    console.error("No stripe_price_id for subject:", subjectUuid);
-    return NextResponse.json({ error: "Pricing not configured." }, { status: 500 });
+    return NextResponse.json({ error: "Pricing not configured" }, { status: 500 });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 4: Create Stripe checkout session
-  // ─────────────────────────────────────────────────────────────────────────────
-  let stripe: Stripe;
+  // Create Stripe session
   try {
-    stripe = getStripe();
-  } catch (stripeInitErr: any) {
-    console.error("Stripe init error:", stripeInitErr.message);
-    return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 });
-  }
-
-  try {
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -87,15 +58,15 @@ export async function POST(req: NextRequest) {
       cancel_url: `${req.nextUrl.origin}/cancel`,
       metadata: {
         subjectUuid,
-        userId,
+        userId: user.id,
       },
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (stripeErr: any) {
-    console.error("Stripe checkout.sessions.create error:", stripeErr);
+    return NextResponse.redirect(session.url!, { status: 303 });
+  } catch (err: any) {
+    console.error("Stripe error:", err);
     return NextResponse.json(
-      { error: stripeErr.message || "Stripe session error." },
+      { error: err.message || "Stripe session creation failed." },
       { status: 500 }
     );
   }

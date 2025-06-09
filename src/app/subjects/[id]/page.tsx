@@ -8,8 +8,7 @@ interface Props {
   params: { id: string };
 }
 
-export default async function SubjectDetail({ params }: Props) {
-  const subjectUuid = params.id;
+export default async function SubjectDetail({ params: { id: subjectUuid } }: Props) {
   const supabase = createSupabaseServerClient();
 
   const {

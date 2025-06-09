@@ -4,13 +4,20 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-
   const supabase = createMiddlewareClient({ req, res });
-  const { data: { user } } = await supabase.auth.getUser();
-if (!user) return NextResponse.redirect(new URL("/auth", req.url));
 
-  // Automatically refresh cookies if needed
-  await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const protectedPaths = ["/home", "/subjects", "/buy"];
+  const pathname = req.nextUrl.pathname;
+
+  const isProtected = protectedPaths.some((prefix) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
 
   return res;
 }

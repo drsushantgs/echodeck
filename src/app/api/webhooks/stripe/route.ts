@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           user_id:           userId,
           stripe_session_id: session.id,
           amount:            session.amount_total ?? 0,
-          status:            "paid",
+          payment_confirmed: true,
         });
 
       if (error) {
