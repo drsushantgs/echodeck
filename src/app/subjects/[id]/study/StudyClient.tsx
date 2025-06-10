@@ -40,12 +40,26 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
     fetchCards();
   }, [subjectUuid]);
 
+  const session = supabase.auth.getSession();
+  console.log("Current user session:", session);
+
   async function markProgress(status: boolean) {
-    await supabase.from("user_progress").upsert({
+  const { data, error } = await supabase.from("user_progress").upsert(
+    {
       user_id: userId,
       flashcard_uuid: cards[currentIndex].uuid_id,
       status,
-    });
+    },
+    {
+      onConflict: 'user_id,flashcard_uuid', // Prevent duplicates
+    }
+  );
+
+    if (error) {
+      console.error("Error updating user progress:", error);
+    } else {
+      console.log("User progress updated:", data);
+    }
 
     if (status) {
       setKnownCount((k) => k + 1);

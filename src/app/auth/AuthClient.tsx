@@ -8,6 +8,46 @@ import Link from "next/link";
 
 export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  
+  // New state for firstName on signup
+  const [firstName, setFirstName] = useState("");
+
+  // Password validation function
+  function validatePassword(password: string): string {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter.";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number.";
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return "Password should contain at least one special character.";
+    }
+    return "";
+  }
+
+  // Handler for form submit to validate password
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (!isSignUp) return; // Only validate on signup
+
+    const form = event.currentTarget;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    const error = validatePassword(password);
+    if (error) {
+      event.preventDefault();
+      setPasswordError(error);
+    } else {
+      setPasswordError("");
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray">
@@ -30,7 +70,23 @@ export default function AuthForm() {
           action={isSignUp ? "/auth/signup" : "/auth/signin"}
           method="POST"
           className="space-y-6"
+          onSubmit={handleSubmit}
         >
+          {isSignUp && (
+            <div>
+              <label className="block text-sm font-medium text-grey mb-1">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full border p-2 rounded focus:ring focus:ring-teal-dark"
+                placeholder="Your first name"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-grey mb-1">Email</label>
             <input
@@ -51,6 +107,9 @@ export default function AuthForm() {
               className="w-full border p-2 rounded focus:ring focus:ring-teal-dark"
               placeholder="••••••••"
             />
+            {passwordError && (
+              <p className="mt-1 text-xs text-red-600">{passwordError}</p>
+            )}
           </div>
 
           <Button intent="primary" size="md" className="w-full mb-4" type="submit">
@@ -62,7 +121,10 @@ export default function AuthForm() {
           {isSignUp ? "Already have an account?" : "Don’t have an account yet?"}{" "}
           <button
             type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setPasswordError("");
+            }}
             className="text-teal font-semibold hover:underline"
           >
             {isSignUp ? "Log In" : "Sign Up"}
