@@ -147,9 +147,9 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
           </div>
 
           {showAnswer ? (
-            <p className="mt-6 text-lg text-brand-teal font-medium transition-opacity duration-300">
-              {card.answer}
-            </p>
+            <div className="mt-6 text-lg text-brand-teal font-medium transition-opacity duration-300"
+              dangerouslySetInnerHTML={{ __html:card.answer }}
+            />
           ) : (
             <Button
               intent="secondary"

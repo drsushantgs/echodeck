@@ -82,6 +82,12 @@ export default async function SubjectDetail({
     total: progressRow?.total_cards ?? 0,
   };
 
+  // 4. Fetch total available cards
+  const { count: availableCount } = await supabase
+    .from("flashcards")
+    .select("uuid_id", { count: "exact", head: true })
+    .eq("subject_uuid", subjectUuid);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray">
       <div className="w-full max-w-md p-10 border rounded-lg shadow-lg text-center bg-white">
@@ -93,7 +99,8 @@ export default async function SubjectDetail({
         </Link>
         <Heading level={1} className="mb-4">{subject?.subject_name}</Heading>
         <p className="text-lg text-grey mb-6">
-          {progress.known} / {progress.total} cards learned
+          You’ve learned <span className="font-semibold">{progress.known}</span> of{" "}
+          <span className="font-semibold">{availableCount}</span> cards.
         </p>
         <Link href={`/subjects/${subjectUuid}/study`}>
           <Button intent="primary" size="md">Start Studying</Button>
