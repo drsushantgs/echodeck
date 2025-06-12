@@ -19,7 +19,7 @@ export default function LandingPage() {
 
       {/* 3) Short tagline / value proposition */}
       <p className="text-lg sm:text-xl text-brand-navy text-center max-w-xl leading-relaxed mb-8">
-        The fastest, most focused way to master your UK dental guidelines for the ORE Part 2. 
+        Prepare for ORE Part 2. On the go. 🏎️💨  
       </p>
 
       {/* 4) Primary CTA */}
@@ -35,7 +35,7 @@ export default function LandingPage() {
             text-lg 
             transition
           ">
-          Log In / Sign Up
+          Let's Go!
         </button>
       </Link>
     </main>
