@@ -117,8 +117,8 @@ export default function AuthForm() {
           </Button>
         </form>
 
-        <p className="text-sm text-grey-light text-center">
-          {isSignUp ? "Already have an account?" : "Don’t have an account yet?"}{" "}
+        <p className="text-sm text-grey-light text-center pt-2">
+          {isSignUp ? "Already have an account?" : "Don't have an account yet?"}{" "}
           <button
             type="button"
             onClick={() => {
@@ -127,7 +127,7 @@ export default function AuthForm() {
             }}
             className="text-teal font-semibold hover:underline"
           >
-            {isSignUp ? "Log In" : "Sign Up"}
+            {isSignUp ? "Log In" : "Sign Up. It's free!"}
           </button>
         </p>
         <p className="text-sm text-grey-light text-center mt-2">
