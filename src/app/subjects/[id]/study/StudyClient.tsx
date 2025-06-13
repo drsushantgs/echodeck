@@ -104,13 +104,13 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
       <main className="min-h-screen flex items-center justify-center bg-white px-4 text-center">
         <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-md border border-grey-300 space-y-6">
           <h2 className="text-2xl font-semibold text-brand-navy">
-            Session Complete! {emoji}
+            Done! {emoji}
           </h2>
 
           <p className="text-lg text-grey-700">
-            You marked <span className="font-bold">{knownCount}</span> out of{" "}
-            <span className="font-bold">{total}</span> cards as{" "}
-            <span className="text-brand-teal">known</span>.
+            That's  <span className="font-bold">{knownCount}</span> out of{" "}
+            <span className="font-bold">{total}</span> cards {" "}
+            <span className="text-brand-teal">stronger</span>.
           </p>
 
           <p className="text-md text-grey-700">
@@ -120,7 +120,7 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
             <Button intent="primary" size="md" onClick={restartSession}>
-              Study Again
+              Study Again to Lock it In
             </Button>
 
             <Link href="/home">
@@ -151,9 +151,31 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
           </div>
 
           {showAnswer ? (
-            <div className="mt-6 text-lg text-brand-teal font-medium transition-opacity duration-300"
-              dangerouslySetInnerHTML={{ __html:card.answer }}
-            />
+            <>
+              <div className="mt-6 text-lg text-brand-teal font-medium transition-opacity duration-300"
+                dangerouslySetInnerHTML={{ __html:card.answer }}
+              />
+              {card.image_url && (
+                <img src={card.image_url} alt="Card Image" className="mt-4" />
+              )}
+              {card.video_url && (
+                <video controls className="mt-4">
+                  <source src={card.video_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              )}
+              {card.embed_html && (
+                <div
+                  className="mt-4"
+                  dangerouslySetInnerHTML={{ __html: card.embed_html }}
+                />
+              )}
+              {card.link_url && (
+                <a href={card.link_url} className="mt-4 text-blue-500">
+                  Learn more
+                </a>
+              )}
+            </>
           ) : (
             <Button
               intent="secondary"

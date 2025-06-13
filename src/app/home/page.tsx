@@ -17,9 +17,27 @@ export default async function HomePage() {
 
   if (!user) {
     return (
-      <div className="p-6 text-center text-grey-700">
-        Not logged in. <Link href="/auth">Go to login</Link>
+      <main className="min-h-screen flex flex-col items-center justify-center text-center px-6 py-10">
+      <h1 className="text-2xl font-bold text-brand-navy mb-4">Hold up — you're not logged in</h1>
+      <p className="text-gray-700 mb-6">
+        EchoDeck remembers your progress, flashcards, and purchases.  
+        Sign in to unlock your study decks.
+      </p>
+      <div className="space-x-4">
+        <Link
+          href="/auth"
+          className="inline-block bg-teal text-brand-coral px-6 py-2 rounded-full text-lg font-semibold hover:bg-teal-dark"
+        >
+          🔐 Sign In
+        </Link>
+        <Link
+          href="/auth"
+          className="inline-block border border-teal text-teal px-6 py-2 rounded-full text-lg font-semibold hover:bg-teal-light"
+        >
+          ✍️ Sign Up
+        </Link>
       </div>
+    </main>
     );
   }
 

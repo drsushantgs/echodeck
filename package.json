@@ -17,7 +17,10 @@
     "next": "^15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "stripe": "^18.2.1"
+    "react-hot": "^0.0.1",
+    "react-hot-toast": "^2.5.2",
+    "stripe": "^18.2.1",
+    "toast": "^0.5.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

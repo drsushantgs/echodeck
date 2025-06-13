@@ -22,6 +22,12 @@ export default function LandingPage() {
         Ace ORE Part 2. Flashcards that actually stick. 🚀  
       </p>
 
+      <ul className="text-sm sm:text-base text-gray-700 mt-2 space-y-1 mb-8">
+        <li>✅ Stop wasting time on 100s of guideline pages</li>
+        <li>📱 Study anywhere — even in line at Tesco</li>
+        <li>🎯 Designed by dentists. Built to pass.</li>
+      </ul>
+
       {/* 4) Primary CTA */}
       <Link href="/auth">
         <button className="
@@ -35,9 +41,13 @@ export default function LandingPage() {
             text-lg 
             transition
           ">
-          Let's Go!
+          👉 Start Studying Now
         </button>
       </Link>
+
+      <p className="mt-2 text-sm text-gray-500">
+        New here? <Link href="/start-here" className="text-teal hover:underline">See how it works</Link>
+      </p>
     </main>
   );
 }
