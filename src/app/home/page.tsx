@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import ClientWelcomeToast from "@/components/ClientWelcomeToast";
 
 interface Subject {
   uuid_id: string;
@@ -65,6 +66,8 @@ export default async function HomePage() {
             </Button>
           </form>
         </div>
+
+        <ClientWelcomeToast />
 
         <h1 className="font-display text-3xl sm:text-4xl text-brand-navy text-center mb-8">
           Welcome to EchoDeck
