@@ -45,8 +45,10 @@ export default async function BuyPage(props: {
           {subject.subject_name}
         </Heading>
 
-        <p className="text-gray-700 mb-8">
-          Unlock full access to this subject’s flashcards and track your progress.
+        <p className="text-center text-gray-700 mb-8">
+          Unlock full access to this subject’s flashcards and track your progress. <br /> <br />
+          Made by dentists. <br />
+          Yours for the price of a coffee ☕️
         </p>
 
         <p className="text-lg font-semibold mb-8">

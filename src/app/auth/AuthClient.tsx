@@ -63,8 +63,12 @@ export default function AuthForm() {
         </Link>
 
         <Heading level={2} className="mb-6">
-          {isSignUp ? "Create Your Account" : "Log In"}
+          {isSignUp ? "Create Your Account" : "Welcome Back, future UK dentist."}
         </Heading>
+
+        <p className="text-sm text-grey-light text-center pt-2">
+          {"Let's get you closer to the GDC."}
+        </p>  
 
         <form
           action={isSignUp ? "/auth/signup" : "/auth/signin"}

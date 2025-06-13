@@ -105,6 +105,9 @@ export default async function SubjectDetail({
         <Link href={`/subjects/${subjectUuid}/study`}>
           <Button intent="primary" size="md">Start Studying</Button>
         </Link>
+        <p className="text-xs text-grey-light text-center pt-2">
+          {"2 minutes to stronger recall 🏎️💨"}
+        </p>
       </div>
     </main>
   );

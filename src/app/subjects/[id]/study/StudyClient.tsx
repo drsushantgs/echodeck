@@ -10,6 +10,10 @@ type Card = {
   uuid_id: string;
   question: string;
   answer: string;
+  image_url?: string; // Optional image URL
+  video_url?: string; // Optional video URL
+  embed_html?: string; // Optional embed HTML
+  link_url?: string; // Optional link URL
 };
 
 interface Props {
@@ -29,7 +33,7 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
     async function fetchCards() {
       const { data, error } = await supabase
         .from("flashcards")
-        .select("uuid_id, question, answer")
+        .select("uuid_id, question, answer, image_url, video_url, embed_html, link_url")
         .eq("subject_uuid", subjectUuid);
 
       if (!error && data) {

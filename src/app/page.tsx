@@ -19,7 +19,7 @@ export default function LandingPage() {
 
       {/* 3) Short tagline / value proposition */}
       <p className="text-lg sm:text-xl text-brand-navy text-center max-w-xl leading-relaxed mb-8">
-        Prepare for ORE Part 2. On the go. 🏎️💨  
+        Ace ORE Part 2. Flashcards that actually stick. 🚀  
       </p>
 
       {/* 4) Primary CTA */}
