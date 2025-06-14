@@ -60,7 +60,7 @@ export default function FeedbackButton() {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="e.g. I would love if you could add DBOH, or I am not able to see the next flashhcard.."
+            placeholder="e.g. I would love if you could add DBOH, or I am not able to see the next flashcard.."
             className="w-full border border-grey-300 rounded-lg px-3 py-2 text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-teal"
             rows={3}
           />
