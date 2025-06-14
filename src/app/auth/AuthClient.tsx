@@ -13,12 +13,18 @@ export default function AuthClient() {
 
   const isSignupPath = pathname === "/auth/signup";
   const [isSignUp, setIsSignUp] = useState(isSignupPath);
-  const [passwordError, setPasswordError] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   useEffect(() => {
     setIsSignUp(isSignupPath);
     setPasswordError("");
+    setConfirmPassword("");
+    setConfirmError("");
+    setPassword("");
   }, [isSignupPath]);
 
   function validatePassword(password: string): string {
@@ -33,16 +39,23 @@ export default function AuthClient() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     if (!isSignUp) return;
 
-    const form = event.currentTarget;
-    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
-
     const error = validatePassword(password);
     if (error) {
       event.preventDefault();
       setPasswordError(error);
-    } else {
-      setPasswordError("");
+      setConfirmError("");
+      return;
     }
+
+    if (password !== confirmPassword) {
+      event.preventDefault();
+      setPasswordError("");
+      setConfirmError("Passwords do not match.");
+      return;
+    }
+
+    setPasswordError("");
+    setConfirmError("");
   }
 
   function handleToggle() {
@@ -109,6 +122,13 @@ export default function AuthClient() {
               type="password"
               name="password"
               required
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (confirmPassword.length > 0) {
+                  setConfirmError(e.target.value === confirmPassword ? "" : "Passwords do not match.");
+                }
+              }}
               className="w-full border p-2 rounded focus:ring focus:ring-teal-dark"
               placeholder="••••••••"
             />
@@ -134,12 +154,20 @@ export default function AuthClient() {
                   type="password"
                   name="confirmPassword"
                   required
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setConfirmPassword(value);
+                    setConfirmError(value === password ? "" : "Passwords do not match.");
+                  }}
                   className="w-full border p-2 rounded focus:ring focus:ring-teal-dark"
                   placeholder="••••••••"
                 />
-                <div className="mt-1 text-xs text-grey-light">
-                  <p>Make sure it matches the password above.</p>
-                </div>
+                {confirmPassword.length > 0 && (
+                  <p className={`mt-1 text-xs ${confirmError ? "text-red-600" : "text-green-600"}`}>
+                    {confirmError || "✅ Passwords match."}
+                  </p>
+                )}
               </div>
             </>
           )}
