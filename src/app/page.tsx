@@ -5,9 +5,9 @@ import Image from 'next/image';
 
 export default function LandingPage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-white">
+    <main className="flex flex-col items-center justify-center px-4 bg-white">
       {/* 1) Logo / Wordmark */}
-      <div className="mb-8 pt-1">
+      <div className="mb-8 pt-4">
         <Image
           src="/images/echodeck wordmark.png"
           alt="EchoDeck"
