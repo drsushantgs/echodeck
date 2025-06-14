@@ -7,7 +7,7 @@ export default function LandingPage() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-white">
       {/* 1) Logo / Wordmark */}
-      <div className="mb-8 pt-4">
+      <div className="mb-8 pt-2">
         <Image
           src="/images/echodeck wordmark.png"
           alt="EchoDeck"
