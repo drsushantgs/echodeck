@@ -1,7 +1,7 @@
 // src/app/admin/decks/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import Button from "@/components/ui/Button";
@@ -10,7 +10,7 @@ const supabase = createClientComponentClient<Database>();
 
 export default function AdminDecksPage() {
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<{ id: string; name: string } | null>(null);
   const [form, setForm] = useState({
     question: "",
     answer: "",
@@ -19,6 +19,8 @@ export default function AdminDecksPage() {
     embed_html: "",
     link_url: "",
   });
+  const [status, setStatus] = useState<string | null>(null);
+  const questionRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchSubjects() {
@@ -29,18 +31,27 @@ export default function AdminDecksPage() {
     fetchSubjects();
   }, []);
 
-  async function handleSubmit() {
+  useEffect(() => {
+    if (selected && questionRef.current) {
+      questionRef.current.focus();
+    }
+  }, [selected]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!selected) return;
     const { error } = await supabase.from("flashcards").insert({
-      subject_uuid: selected,
+      subject_uuid: selected.id,
       ...form,
     });
 
-    if (error) console.error("Error adding flashcard:", error);
-    else {
-      alert("Flashcard added ✅");
+    if (error) {
+      console.error("Error adding flashcard:", error);
+      setStatus("❌ Error adding flashcard");
+    } else {
+      setStatus("✅ Flashcard added");
       setForm({ question: "", answer: "", image_url: "", video_url: "", embed_html: "", link_url: "" });
-      setSelected(null);
+      if (questionRef.current) questionRef.current.focus();
     }
   }
 
@@ -54,27 +65,33 @@ export default function AdminDecksPage() {
           {subjects.map((s) => (
             <div key={s.uuid_id} className="border-b py-2 flex justify-between items-center">
               <p className="text-sm text-brand-navy">{s.subject_name}</p>
-              <Button size="sm" onClick={() => setSelected(s.uuid_id)}>Add Flashcard</Button>
+              <Button size="sm" onClick={() => setSelected({ id: s.uuid_id, name: s.subject_name })}>
+                Add Flashcard
+              </Button>
             </div>
           ))}
         </div>
 
         {selected && (
           <div className="bg-white border p-4 rounded-xl">
-            <h2 className="text-sm font-semibold text-grey mb-3">New Flashcard</h2>
-            <div className="space-y-3">
-              {Object.entries(form).map(([key, value]) => (
+            <h2 className="text-sm font-semibold text-grey mb-3">
+              New Flashcard for <span className="text-brand-navy font-bold">{selected.name}</span>
+            </h2>
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              {Object.entries(form).map(([key, value], idx) => (
                 <input
                   key={key}
                   type="text"
-                  placeholder={key.replace("_", " ")}
+                  placeholder={key.replace(/_/g, " ")}
                   value={value}
                   onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  ref={idx === 0 ? questionRef : null}
                   className="w-full border p-2 rounded text-sm"
                 />
               ))}
-              <Button intent="primary" onClick={handleSubmit}>Submit Flashcard</Button>
-            </div>
+              <Button intent="primary" type="submit">Submit Flashcard</Button>
+              {status && <p className="text-xs text-grey-dark italic pt-1">{status}</p>}
+            </form>
           </div>
         )}
       </div>
