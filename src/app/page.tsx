@@ -40,15 +40,27 @@ export default function LandingPage() {
             rounded-full 
             text-lg 
             transition
+            mb-4
           ">
           👉 Start Studying Now
         </button>
       </Link>
-      <Link
-        href="/sample"
-        className="text-sm mt-4 bold text-teal hover:text-teal-dark"
-      >
-        👀 Try a sample deck — no signup needed
+      <Link href="/sample">
+        <button className="
+            bg-brand-coral 
+            hover:bg-opacity-90 
+            text-white 
+            font-semibold 
+            px-8 
+            py-3 
+            rounded-full 
+            text-lg 
+            transition
+            secondary
+            mb-4
+          ">
+          👀 Try a Sample Deck
+        </button>
       </Link>
 
       <p className="mt-2 text-sm text-gray-500">
