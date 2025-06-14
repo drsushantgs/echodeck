@@ -44,6 +44,12 @@ export default function LandingPage() {
           👉 Start Studying Now
         </button>
       </Link>
+      <Link
+        href="/sample"
+        className="text-sm mt-4 bold text-teal hover:text-teal-dark"
+      >
+        👀 Try a sample deck — no signup needed
+      </Link>
 
       <p className="mt-2 text-sm text-gray-500">
         New here? <Link href="/start-here" className="text-teal hover:underline">See how it works</Link>

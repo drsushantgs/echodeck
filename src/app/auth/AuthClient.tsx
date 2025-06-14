@@ -1,41 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Heading from "@/components/ui/Heading";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 
-export default function AuthForm() {
-  const [isSignUp, setIsSignUp] = useState(false);
+export default function AuthClient() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const isSignupPath = pathname === "/auth/signup";
+  const [isSignUp, setIsSignUp] = useState(isSignupPath);
   const [passwordError, setPasswordError] = useState("");
-  
-  // New state for firstName on signup
   const [firstName, setFirstName] = useState("");
 
-  // Password validation function
+  useEffect(() => {
+    setIsSignUp(isSignupPath);
+    setPasswordError("");
+  }, [isSignupPath]);
+
   function validatePassword(password: string): string {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-    if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one uppercase letter.";
-    }
-    if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one lowercase letter.";
-    }
-    if (!/[0-9]/.test(password)) {
-      return "Password must contain at least one number.";
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return "Password should contain at least one special character.";
-    }
+    if (password.length < 8) return "Password must be at least 8 characters.";
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter.";
+    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter.";
+    if (!/[0-9]/.test(password)) return "Password must contain at least one number.";
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) return "Password should contain at least one special character.";
     return "";
   }
 
-  // Handler for form submit to validate password
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    if (!isSignUp) return; // Only validate on signup
+    if (!isSignUp) return;
 
     const form = event.currentTarget;
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
@@ -47,6 +43,11 @@ export default function AuthForm() {
     } else {
       setPasswordError("");
     }
+  }
+
+  function handleToggle() {
+    const newPath = isSignUp ? "/auth" : "/auth/signup";
+    router.push(newPath);
   }
 
   return (
@@ -68,10 +69,10 @@ export default function AuthForm() {
 
         <p className="text-sm text-grey-light text-center pt-2">
           {"Let's get you closer to the GDC"}
-        </p>  
+        </p>
 
         <form
-          action={isSignUp ? "/auth/signup" : "/auth/signin"}
+          action={isSignUp ? "/auth/signup/submit" : "/auth/signin"}
           method="POST"
           className="space-y-6"
           onSubmit={handleSubmit}
@@ -116,6 +117,33 @@ export default function AuthForm() {
             )}
           </div>
 
+          {isSignUp && (
+            <>
+              <div className="mt-1 text-xs text-grey-light">
+                <p>Your password must be at least 8 characters long.</p>
+                <p>It should include:</p>
+                <p>🔘 One capital letter</p>
+                <p>🔘 One small letter</p>
+                <p>🔘 One number</p>
+                <p>🔘 One special character</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-grey mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  required
+                  className="w-full border p-2 rounded focus:ring focus:ring-teal-dark"
+                  placeholder="••••••••"
+                />
+                <div className="mt-1 text-xs text-grey-light">
+                  <p>Make sure it matches the password above.</p>
+                </div>
+              </div>
+            </>
+          )}
+
           <Button intent="primary" size="md" className="w-full mb-4" type="submit">
             {isSignUp ? "Create Account" : "Log In"}
           </Button>
@@ -125,15 +153,13 @@ export default function AuthForm() {
           {isSignUp ? "Already have an account?" : "Don't have an account yet?"}{" "}
           <button
             type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setPasswordError("");
-            }}
+            onClick={handleToggle}
             className="text-teal font-semibold hover:underline"
           >
-            {isSignUp ? "Log In" : "Sign Up. It's free!"}
+            {isSignUp ? "Log In" : "Sign Up. It’s free!"}
           </button>
         </p>
+
         <p className="text-sm text-grey-light text-center mt-2">
           <Link href="/auth/reset" className="text-teal hover:underline">
             Forgot your password?
