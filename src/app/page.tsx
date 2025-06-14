@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function LandingPage() {
   return (
-    <main className="flex flex-col items-center justify-center px-4 bg-white">
+    <main className="flex flex-col items-center justify-center px-4 py-6 sm:py-10 bg-white">
       {/* 1) Logo / Wordmark */}
       <div className="mb-8 pt-4">
         <Image
