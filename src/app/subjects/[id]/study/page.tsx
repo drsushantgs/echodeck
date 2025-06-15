@@ -1,7 +1,7 @@
 // src/app/subjects/[id]/study/page.tsx
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import StudyClient from "./StudyClient";
+import StudyClient from "@/components/StudyClient";
 
 export default async function StudyPage({
   params,

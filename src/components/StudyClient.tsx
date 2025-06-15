@@ -1,3 +1,4 @@
+// src/components/StudyClient.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 interface Card {
   uuid_id: string;
@@ -21,10 +23,11 @@ interface Card {
 
 interface Props {
   userId: string;
-  subjectUuid: string;
+  subjectUuid?: string | null;
+  customUuids?: string[];
 }
 
-export default function StudyClient({ userId, subjectUuid }: Props) {
+export default function StudyClient({ userId, subjectUuid, customUuids }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
@@ -38,32 +41,46 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
     const limit = isNaN(limitParam) ? 10 : limitParam;
 
     async function fetchCards() {
-      const { data, error } = await supabase.rpc("get_due_cards", {
-        subject_uuid: subjectUuid,
-        user_id: userId,
-        limit_count: limit,
-      });
-
-      if (data && data.length > 0) {
-        setCards(data);
-      } else {
-        const { data: fallbackData, error: fallbackError } = await supabase
+      if (customUuids && customUuids.length > 0) {
+        const { data } = await supabase
           .from("flashcards")
           .select("uuid_id, question, answer, image_url, video_url, embed_html, link_url")
-          .eq("subject_uuid", subjectUuid)
+          .in("uuid_id", customUuids)
           .order("uuid_id", { ascending: true })
           .limit(limit);
 
-        if (fallbackData) {
-          setCards(fallbackData);
+        if (data) setCards(data);
+        return;
+      }
+
+      if (subjectUuid) {
+        const { data } = await supabase.rpc("get_due_cards", {
+          subject_uuid: subjectUuid,
+          user_id: userId,
+          limit_count: limit,
+        });
+
+        if (data && data.length > 0) {
+          setCards(data);
+        } else {
+          const { data: fallbackData } = await supabase
+            .from("flashcards")
+            .select("uuid_id, question, answer, image_url, video_url, embed_html, link_url")
+            .eq("subject_uuid", subjectUuid)
+            .order("uuid_id", { ascending: true })
+            .limit(limit);
+
+          if (fallbackData) setCards(fallbackData);
         }
       }
     }
+
     fetchCards();
-  }, [subjectUuid, userId, searchParams]);
+    fetchStarredFlashcards();
+  }, [subjectUuid, customUuids, userId, searchParams]);
 
   async function fetchStarredFlashcards() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("user_starred_flashcards")
       .select("flashcard_uuid")
       .eq("user_id", userId);
@@ -71,6 +88,63 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
     if (data) {
       setStarredUuids(new Set(data.map((row) => row.flashcard_uuid)));
     }
+  }
+
+  async function updateStreakAndActivity(cardCount: number) {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("cards_reviewed, goal_met")
+      .eq("user_id", userId)
+      .eq("activity_date", todayStr)
+      .single();
+
+    const newCount = (existing?.cards_reviewed ?? 0) + cardCount;
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("daily_goal, current_streak")
+      .eq("id", userId)
+      .single();
+
+    const dailyGoal = profileData?.daily_goal ?? 10;
+    const prevStreak = profileData?.current_streak ?? 0;
+    const goalMet = newCount >= dailyGoal;
+
+    await supabase.from("daily_activity").upsert({
+      user_id: userId,
+      activity_date: todayStr,
+      cards_reviewed: newCount,
+      goal_met: goalMet,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "user_id,activity_date"
+    });
+
+    if (!existing?.goal_met && goalMet) {
+      toast.success("🏆 Daily goal met!", { duration: 4000 });
+    }
+
+    const { data: yesterday } = await supabase
+      .from("daily_activity")
+      .select("activity_date")
+      .eq("user_id", userId)
+      .eq("activity_date", yesterdayStr)
+      .single();
+
+    const newStreak = yesterday ? prevStreak + 1 : 1;
+
+    await supabase.from("profiles").update({
+      current_streak: newStreak,
+      last_study_date: todayStr
+    }).eq("id", userId);
+
+    toast.success(`🔥 ${newStreak}-day streak!`, {
+      duration: 4000,
+    });
   }
 
   async function rateCard(rating: "again" | "hard" | "easy") {
@@ -116,7 +190,41 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
     setShowAnswer(false);
     setCurrentIndex((i) => i + 1);
     setReviewedCount((r) => r + 1);
+
+        // Log progress snapshot for this subject today
+    if (subjectUuid) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const { count: total } = await supabase
+        .from("flashcards")
+        .select("*", { count: "exact", head: true })
+        .eq("subject_uuid", subjectUuid);
+
+      const { count: known } = await supabase
+        .from("user_progress")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .in("bucket", [2, 3, 4])
+        .filter("flashcard_uuid", "in", `(select uuid_id from flashcards where subject_uuid.eq.${subjectUuid})`);
+
+      const percentKnown = total && known ? Math.round((known / total) * 10000) / 100 : 0;
+
+      await supabase.from("user_subject_progress_log").insert({
+        user_id: userId,
+        subject_uuid: subjectUuid,
+        log_date: todayStr,
+        known_cards: known ?? 0,
+        total_cards: total ?? 0,
+        percent_known: percentKnown,
+      });
+    }
   }
+
+  useEffect(() => {
+    if (currentIndex === cards.length && reviewedCount > 0) {
+      updateStreakAndActivity(reviewedCount);
+    }
+  }, [currentIndex, cards.length, reviewedCount]);
 
   async function toggleStar(uuid: string) {
     const isStarred = starredUuids.has(uuid);
@@ -134,7 +242,6 @@ export default function StudyClient({ userId, subjectUuid }: Props) {
       });
     }
 
-    // Update local state
     setStarredUuids((prev) => {
       const updated = new Set(prev);
       isStarred ? updated.delete(uuid) : updated.add(uuid);
