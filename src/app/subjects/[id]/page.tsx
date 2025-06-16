@@ -100,9 +100,11 @@ export default async function SubjectDetail({ params }: { params: Promise<{ id: 
             </div>
           </fieldset>
         </div>
+        <div className="mt-8">
+          <Heading level={3} className="mb-4">Your Progress</Heading>
+          <ProgressChart data={chartData} />
+        </div>
         <p className="text-xs text-grey-light text-center pt-2">Your cards will be personalized based on spaced repetition 🔁</p>
-
-        <ProgressChart data={chartData} />
       </div>
     </main>
   );

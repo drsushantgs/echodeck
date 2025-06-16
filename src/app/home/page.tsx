@@ -73,7 +73,7 @@ export default async function DashboardPage() {
     <main className="min-h-screen px-4 py-6 sm:px-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold text-brand-navy">
-          Welcome back{profile?.first_name ? `, ${profile.first_name}` : ""} 👋
+          Welcome back, Dr. {profile?.first_name ? ` ${profile.first_name}` : ""} 👋
         </h1>
         <form action="/auth/signout" method="POST">
           <Button intent="secondary" size="sm">Log Out</Button>

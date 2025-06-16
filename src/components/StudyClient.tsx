@@ -21,6 +21,11 @@ interface Card {
   next_due_at?: string;
 }
 
+interface PowerTip {
+  id: number;
+  message: string;
+}
+
 interface Props {
   userId: string;
   subjectUuid?: string | null;
@@ -35,6 +40,7 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
   const [showAnswer, setShowAnswer] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [starredUuids, setStarredUuids] = useState<Set<string>>(new Set());
+  const [powerTip, setPowerTip] = useState<PowerTip | null>(null);
 
   useEffect(() => {
     const limitParam = parseInt(searchParams.get("limit") || "10");
@@ -106,13 +112,14 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("daily_goal, current_streak")
+      .select("daily_goal, current_streak, last_study_date")
       .eq("id", userId)
       .single();
 
     const dailyGoal = profileData?.daily_goal ?? 10;
     const prevStreak = profileData?.current_streak ?? 0;
     const goalMet = newCount >= dailyGoal;
+    const lastStudyDate = profileData?.last_study_date;
 
     await supabase.from("daily_activity").upsert({
       user_id: userId,
@@ -135,16 +142,29 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
       .eq("activity_date", yesterdayStr)
       .single();
 
-    const newStreak = yesterday ? prevStreak + 1 : 1;
+    if (lastStudyDate !== todayStr) {
+      const newStreak = yesterday ? prevStreak + 1 : 1;
 
-    await supabase.from("profiles").update({
-      current_streak: newStreak,
-      last_study_date: todayStr
-    }).eq("id", userId);
+      await supabase.from("profiles").update({
+        current_streak: newStreak,
+        last_study_date: todayStr,
+      }).eq("id", userId);
 
-    toast.success(`🔥 ${newStreak}-day streak!`, {
-      duration: 4000,
-    });
+      toast.success(`🔥 ${newStreak}-day streak!`, {
+        duration: 4000,
+      });
+    }
+  }
+
+  async function loadPowerTip() {
+    const { data, error } = await supabase
+      .from("power_tips")
+      .select("*")
+      .order("RANDOM()")
+      .limit(1)
+      .single();
+
+    if (data) setPowerTip(data);
   }
 
   async function rateCard(rating: "again" | "hard" | "easy") {
@@ -187,36 +207,97 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
       onConflict: "user_id,flashcard_uuid",
     });
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const { data: activityToday } = await supabase
+      .from("daily_activity")
+      .select("cards_reviewed")
+      .eq("user_id", userId)
+      .eq("activity_date", todayStr)
+      .single();
+
+    const reviewedToday = (activityToday?.cards_reviewed ?? 0) + 1;
+
     setShowAnswer(false);
     setCurrentIndex((i) => i + 1);
     setReviewedCount((r) => r + 1);
 
-        // Log progress snapshot for this subject today
-    if (subjectUuid) {
+    if (reviewedToday % 7 === 0) {
+      await loadPowerTip();
+    }
+
+    // Log progress snapshot for this subject today
+    if (subjectUuid && userId) {
       const todayStr = new Date().toISOString().slice(0, 10);
 
-      const { count: total } = await supabase
+      // Step 1: Get all flashcard UUIDs for the subject
+      const { data: subjectCards, error: cardErr } = await supabase
         .from("flashcards")
-        .select("*", { count: "exact", head: true })
+        .select("uuid_id")
         .eq("subject_uuid", subjectUuid);
 
-      const { count: known } = await supabase
+      if (cardErr) {
+        console.error("❌ Error fetching subject cards", cardErr);
+        return;
+      }
+
+      const flashcardUuids = (subjectCards || []).map((c) => c.uuid_id);
+
+      if (flashcardUuids.length === 0) {
+        console.warn("⚠️ No flashcards found for subject, skipping progress log");
+        return;
+      }
+
+      let known = 0;
+      const { count: knownCount, error: knownErr } = await supabase
         .from("user_progress")
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
         .in("bucket", [2, 3, 4])
-        .filter("flashcard_uuid", "in", `(select uuid_id from flashcards where subject_uuid.eq.${subjectUuid})`);
+        .in("flashcard_uuid", flashcardUuids);
 
-      const percentKnown = total && known ? Math.round((known / total) * 10000) / 100 : 0;
+      if (knownErr) {
+        console.error("❌ Error fetching known count", knownErr);
+        return;
+      }
 
-      await supabase.from("user_subject_progress_log").insert({
+      known = knownCount ?? 0;
+
+      const { count: total, error: totalErr } = await supabase
+        .from("flashcards")
+        .select("*", { count: "exact", head: true })
+        .eq("subject_uuid", subjectUuid);
+
+      if (totalErr) {
+        console.error("❌ Error fetching total count", totalErr);
+        return;
+      }
+
+      if (total === null || known === null) {
+        console.warn("⚠️ Invalid known/total counts, skipping log");
+        return;
+      }
+
+      const percentKnown = Math.round((known / total) * 10000) / 100;
+
+      const { error: upsertErr } = await supabase.from("user_subject_progress_log").upsert({
         user_id: userId,
         subject_uuid: subjectUuid,
         log_date: todayStr,
-        known_cards: known ?? 0,
-        total_cards: total ?? 0,
-        percent_known: percentKnown,
+        known_cards: known,
+        total_cards: total,
+      }, {
+        onConflict: "user_id,subject_uuid,log_date"
       });
+
+      if (upsertErr) {
+        console.error("❌ Failed to upsert progress log", upsertErr);
+      } else {
+        console.log("✅ Logged user_subject_progress snapshot", {
+          known,
+          total,
+          percentKnown
+        });
+      }
     }
   }
 
@@ -257,6 +338,21 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
 
   if (cards.length === 0) {
     return <div className="min-h-screen flex items-center justify-center text-grey px-4">Loading cards…</div>;
+  }
+
+  if (powerTip) {
+    return (
+      <main className="min-h-screen bg-yellow-50 px-4 pb-16 flex items-center justify-center text-center">
+        <div className="w-full max-w-md bg-white border border-yellow-300 p-8 rounded-2xl shadow-md space-y-6">
+          <h2 className="text-2xl font-bold text-yellow-700">🎁 Power Tip</h2>
+          <p className="text-md text-yellow-800">{powerTip.message}</p>
+          <Button intent="primary" onClick={() => {
+            setPowerTip(null);
+            setCurrentIndex((i) => i + 1);
+          }}>Continue</Button>
+        </div>
+      </main>
+    );
   }
 
   if (currentIndex >= cards.length) {
