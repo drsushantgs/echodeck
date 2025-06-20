@@ -60,6 +60,12 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
   const [powerTip, setPowerTip] = useState<PowerTip | null>(null);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [showIosBanner, setShowIosBanner] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiShownThisSession, setConfettiShownThisSession] = useState(false);
+  const [preSessionBucketCounts, setPreSessionBucketCounts] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [postSessionBucketCounts, setPostSessionBucketCounts] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [showProgressAnimation, setShowProgressAnimation] = useState(false);
+  const [animationReady, setAnimationReady] = useState(false);
 
   useEffect(() => {
     const limitParam = parseInt(searchParams.get("limit") || "10");
@@ -97,6 +103,32 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
 
           if (fallbackData) setCards(fallbackData);
         }
+      }
+      // Fetch pre-session bucket counts for progress animation
+      if (subjectUuid) {
+        const fetchBucketSnapshot = async () => {
+          // Get all flashcard UUIDs for this subject
+          const { data: flashcardRows } = await supabase
+            .from("flashcards")
+            .select("uuid_id")
+            .eq("subject_uuid", subjectUuid);
+          const flashcardUuids = (flashcardRows || []).map((row: any) => row.uuid_id);
+          if (flashcardUuids.length === 0) return;
+          const { data, error } = await supabase
+            .from("user_progress")
+            .select("bucket")
+            .eq("user_id", userId)
+            .in("flashcard_uuid", flashcardUuids);
+          if (data && Array.isArray(data)) {
+            const counts = [0, 0, 0, 0, 0];
+            data.forEach((row: any) => {
+              const bucket = row.bucket ?? 0;
+              counts[bucket]++;
+            });
+            setPreSessionBucketCounts(counts);
+          }
+        };
+        fetchBucketSnapshot();
       }
     }
 
@@ -190,6 +222,35 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
       toast.success(`🔥 ${newStreak}-day streak!`, {
         duration: 4000,
       });
+    }
+
+    // Fetch post-session bucket counts and animate progress
+    if (subjectUuid && userId) {
+      const fetchBucketSnapshotPost = async () => {
+        // Get all flashcard UUIDs for this subject
+        const { data: flashcardRows } = await supabase
+          .from("flashcards")
+          .select("uuid_id")
+          .eq("subject_uuid", subjectUuid);
+        const flashcardUuids = (flashcardRows || []).map((row: any) => row.uuid_id);
+        if (flashcardUuids.length === 0) return;
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("bucket")
+          .eq("user_id", userId)
+          .in("flashcard_uuid", flashcardUuids);
+        if (data && Array.isArray(data)) {
+          const counts = [0, 0, 0, 0, 0];
+          data.forEach((row: any) => {
+            const bucket = row.bucket ?? 0;
+            counts[bucket]++;
+          });
+          setPostSessionBucketCounts(counts);
+          setShowProgressAnimation(true);
+          setAnimationReady(true);
+        }
+      };
+      fetchBucketSnapshotPost();
     }
   }
 
@@ -304,6 +365,31 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
     setShowAnswer(false);
     setCurrentIndex((i) => i + 1);
     setReviewedCount((r) => r + 1);
+
+    // Confetti logic: first card of the day, daily goal met, or every 10th card milestone
+    const justReviewedCount = reviewedToday;
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("daily_goal, current_streak, last_study_date")
+      .eq("id", userId)
+      .single();
+
+    const dailyGoal = profileData?.daily_goal ?? 10;
+    const lastStudyDate = profileData?.last_study_date ?? null;
+
+    const isFirstCardToday = justReviewedCount === 1 && lastStudyDate !== todayStr;
+    const isDailyGoalMet = justReviewedCount === dailyGoal;
+    const isMilestone = justReviewedCount % 10 === 0 && !confettiShownThisSession;
+
+    if (isFirstCardToday || isDailyGoalMet || isMilestone) {
+      setShowConfetti(true);
+      setConfettiShownThisSession(true);
+
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 3000);
+    }
 
     if (reviewedToday % 7 === 0) {
       await loadPowerTip();
@@ -470,13 +556,41 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
     );
   }
 
-  if (currentIndex >= cards.length) {
+  if (currentIndex >= cards.length && reviewedCount > 0 && animationReady) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-white px-4 text-center">
         <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-md border border-grey-300 space-y-6">
           <h2 className="text-2xl font-semibold text-brand-navy">Done! 🎯</h2>
-          <p className="text-lg text-grey-700">You reviewed <span className="font-bold">{reviewedCount}</span> cards in this session.</p>
-          <p className="text-md text-grey-700">That’s real progress. Keep going tomorrow to build your streak!</p>
+          <p className="text-md text-grey-700">You reviewed <span className="font-bold">{reviewedCount}</span> cards in this session.</p>
+          {animationReady && postSessionBucketCounts.some((c) => c > 0) && (
+            <div className="mt-8 space-y-2">
+              {[0, 1, 2, 3, 4].map((bucket) => {
+                const before = preSessionBucketCounts[bucket] ?? 0;
+                const after = postSessionBucketCounts[bucket] ?? 0;
+                const total = Math.max(...postSessionBucketCounts, 1);
+                const color = [
+                  "bg-red-400",
+                  "bg-orange-400",
+                  "bg-yellow-400",
+                  "bg-green-400",
+                  "bg-blue-400"
+                ][bucket];
+                return (
+                  <div key={bucket} className="w-full">
+                    <div className="relative w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                      <div
+                        className={`absolute top-0 left-0 h-2 transition-all duration-1000 ${color}`}
+                        style={{
+                          width: `${(after / total) * 100}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-sm text-grey-700">That’s real progress. Keep going tomorrow to build your streak!</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
             <Button intent="primary" size="md" onClick={restartSession}>Study Again</Button>
             <Link href="/home"><Button intent="secondary" size="md">Return to Dashboard</Button></Link>
@@ -514,8 +628,9 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
     );
   }
 
+  // Insert card definition just before the return, after all session-end checks.
   const card = cards[currentIndex];
-
+  if (!card) return null; // Safety fallback if out of range
   return (
     <main className="min-h-screen bg-brand-ivory px-4 pb-16 relative">
       <Link href="/home" className="text-teal font-semibold hover:underline fixed top-4 left-4">EchoDeck</Link>
@@ -566,6 +681,11 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
           style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
         />
       </div>
+      {showConfetti && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          <img src="/images/confetti.gif" alt="Confetti Celebration" className="w-full h-full object-cover opacity-80" />
+        </div>
+      )}
     </main>
   );
 }

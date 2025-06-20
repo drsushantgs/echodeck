@@ -108,16 +108,14 @@ export default async function DashboardPage() {
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-brand-navy mb-2">📚 Pick up where you left off</h2>
         {lastStudiedSubject ? (
-          <Link href={`/subjects/${lastStudiedSubject.uuid_id}`}>
-            <Card key={lastStudiedSubject.uuid_id}>
-              <CardHeader className="flex justify-between items-center">
-                <CardTitle>{lastStudiedSubject.subject_name}</CardTitle>
-                <Link href={`/subjects/${lastStudiedSubject.uuid_id}`}>
-                  <Button intent="primary" size="sm">Study</Button>
-                </Link>
-              </CardHeader>
-            </Card>
-          </Link>
+          <Card key={lastStudiedSubject.uuid_id}>
+            <CardHeader className="flex justify-between items-center">
+              <CardTitle>{lastStudiedSubject.subject_name}</CardTitle>
+              <Link href={`/subjects/${lastStudiedSubject.uuid_id}`}>
+                <Button intent="primary" size="sm">Study</Button>
+              </Link>
+            </CardHeader>
+          </Card>
         ) : (
           <p className="text-grey-600">You haven’t studied any deck yet — let’s start one today!</p>
         )}
