@@ -481,7 +481,7 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
               📲 Install EchoDeck on your iPhone
             </h3>
             <p className="text-sm text-purple-700">
-              Tap <span className="inline-block"> <svg xmlns="http://www.w3.org/2000/svg" className="inline h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0l-4-4m4 4l4-4m0 4H8a4 4 0 01-4-4V7a4 4 0 014-4h8a4 4 0 014 4v4"/></svg> </span> then &quot;Add to Home Screen&quot;
+              Tap <span className="inline-block"> <svg xmlns="http://www.w3.org/2000/svg" className="inline h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0l-4-4m4 4l4-4m-9 4h9a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg> </span> then &quot;Add to Home Screen&quot;
             </p>
             <div className="flex justify-center pt-2">
               <Button intent="secondary" size="sm" onClick={() => handleDismissIosBanner()}>
