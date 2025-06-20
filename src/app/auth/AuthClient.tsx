@@ -77,11 +77,11 @@ export default function AuthClient() {
         </Link>
 
         <Heading level={2} className="mb-6">
-          {isSignUp ? "Create Your Account" : "Welcome Back, future UK dentist"}
+          {isSignUp ? "Create Your Account" : "Welcome Back, future GDC Registrant!"}
         </Heading>
 
         <p className="text-sm text-grey-light text-center pt-2">
-          {"Let's get you closer to the GDC"}
+          {"Let's get you closer to the finish line"}
         </p>
 
         <form
