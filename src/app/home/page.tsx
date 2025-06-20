@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import ConfidenceTile from "@/components/ConfidenceTile";
 
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient();
@@ -28,7 +29,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, has_onboarded, exam_date, confidence_level")
+    .select("first_name, has_onboarded, exam_date, confidence_level, last_studied_subject_uuid, last_studied_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -61,6 +62,7 @@ export default async function DashboardPage() {
 
   const purchasedUuids = (purchasesData || []).map((p) => p.subject_uuid);
   const purchasedSubjects = (subjectsData || []).filter((s) => purchasedUuids.includes(s.uuid_id));
+  const lastStudiedSubject = purchasedSubjects.find(s => s.uuid_id === profile?.last_studied_subject_uuid) || null;
   const cardsReviewed = activityData?.cards_reviewed ?? 0;
   const goalMet = activityData?.goal_met ?? false;
   const streak = profileData?.current_streak ?? 0;
@@ -89,10 +91,7 @@ export default async function DashboardPage() {
           <p className="text-2xl font-bold text-brand-navy">{cardsReviewed}/{dailyGoal}</p>
           <p className="text-sm text-gray-600">Cards Today</p>
         </div>
-        <div className="bg-white border border-grey-200 rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-brand-navy">{confidence}/10</p>
-          <p className="text-sm text-gray-600">Confidence</p>
-        </div>
+        <ConfidenceTile confidence={confidence} userId={user.id} />
         <div className="bg-white border border-grey-200 rounded-xl shadow p-4 text-center">
           <p className="text-2xl font-bold text-brand-navy">{daysToGo ?? "?"}</p>
           <p className="text-sm text-gray-600">Days to Go</p>
@@ -104,6 +103,24 @@ export default async function DashboardPage() {
         <Link href="/starred/study">
           <Button intent="primary" size="sm">Study Starred Cards</Button>
         </Link>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-brand-navy mb-2">📚 Pick up where you left off</h2>
+        {lastStudiedSubject ? (
+          <Link href={`/subjects/${lastStudiedSubject.uuid_id}`}>
+            <Card key={lastStudiedSubject.uuid_id}>
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle>{lastStudiedSubject.subject_name}</CardTitle>
+                <Link href={`/subjects/${lastStudiedSubject.uuid_id}`}>
+                  <Button intent="primary" size="sm">Study</Button>
+                </Link>
+              </CardHeader>
+            </Card>
+          </Link>
+        ) : (
+          <p className="text-grey-600">You haven’t studied any deck yet — let’s start one today!</p>
+        )}
       </div>
 
       <h2 className="text-xl font-semibold text-brand-navy mb-3">Your Decks</h2>

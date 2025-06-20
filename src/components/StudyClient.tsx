@@ -41,6 +41,8 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
   const [reviewedCount, setReviewedCount] = useState(0);
   const [starredUuids, setStarredUuids] = useState<Set<string>>(new Set());
   const [powerTip, setPowerTip] = useState<PowerTip | null>(null);
+  const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
+  const [showIosBanner, setShowIosBanner] = useState(false);
 
   useEffect(() => {
     const limitParam = parseInt(searchParams.get("limit") || "10");
@@ -83,6 +85,24 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
 
     fetchCards();
     fetchStarredFlashcards();
+
+    // Detect iOS and show custom install banner, only if not previously dismissed/installed
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+
+    if (isIos && !isInStandaloneMode) {
+      (async () => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("home_screen_ios_prompt_status")
+          .eq("id", userId)
+          .single();
+
+        if (!profile?.home_screen_ios_prompt_status) {
+          setShowIosBanner(true);
+        }
+      })();
+    }
   }, [subjectUuid, customUuids, userId, searchParams]);
 
   async function fetchStarredFlashcards() {
@@ -154,6 +174,53 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
         duration: 4000,
       });
     }
+  }
+
+  async function updateSessionsCompletedAndMaybePrompt() {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("sessions_completed, home_screen_prompt_status")
+      .eq("id", userId)
+      .single();
+
+    const sessionsCompleted = (profile?.sessions_completed ?? 0) + 1;
+    const promptStatus = profile?.home_screen_prompt_status;
+
+    await supabase
+      .from("profiles")
+      .update({
+        sessions_completed: sessionsCompleted,
+        home_screen_prompt_last_shown_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    if (sessionsCompleted >= 3 && !promptStatus) {
+      setShowHomeScreenPrompt(true);
+    }
+  }
+
+  async function handleDismissIosBanner() {
+    await supabase
+      .from("profiles")
+      .update({
+        home_screen_ios_prompt_status: "dismissed",
+        home_screen_ios_prompt_last_shown_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    setShowIosBanner(false);
+  }
+
+  async function handleInstalledIosBanner() {
+    await supabase
+      .from("profiles")
+      .update({
+        home_screen_ios_prompt_status: "installed",
+        home_screen_ios_prompt_last_shown_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    setShowIosBanner(false);
   }
 
   async function loadPowerTip() {
@@ -298,12 +365,19 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
           percentKnown
         });
       }
+
+      // Update user's last studied subject and timestamp
+      await supabase.from("profiles").update({
+        last_studied_subject_uuid: subjectUuid,
+        last_studied_at: new Date().toISOString(),
+      }).eq("id", userId);
     }
   }
 
   useEffect(() => {
     if (currentIndex === cards.length && reviewedCount > 0) {
       updateStreakAndActivity(reviewedCount);
+      updateSessionsCompletedAndMaybePrompt();
     }
   }, [currentIndex, cards.length, reviewedCount]);
 
@@ -334,6 +408,30 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
     setCurrentIndex(0);
     setReviewedCount(0);
     setShowAnswer(false);
+  }
+
+  async function handleDismissHomeScreenPrompt() {
+    await supabase
+      .from("profiles")
+      .update({
+        home_screen_prompt_status: "dismissed",
+        home_screen_prompt_last_shown_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    setShowHomeScreenPrompt(false);
+  }
+
+  async function handleInstalledHomeScreenPrompt() {
+    await supabase
+      .from("profiles")
+      .update({
+        home_screen_prompt_status: "installed",
+        home_screen_prompt_last_shown_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    setShowHomeScreenPrompt(false);
   }
 
   if (cards.length === 0) {
@@ -367,6 +465,31 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
             <Link href="/home"><Button intent="secondary" size="md">Return to Dashboard</Button></Link>
           </div>
         </div>
+        {showHomeScreenPrompt && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-grey-300 shadow-xl px-6 py-4 rounded-xl z-50 w-[90%] max-w-md space-y-3 text-center">
+            <h3 className="text-lg font-bold text-brand-navy">📲 Add EchoDeck to your Home Screen</h3>
+            <p className="text-sm text-grey-700">You can launch EchoDeck faster next time — no browser needed!</p>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button intent="secondary" size="sm" onClick={() => handleDismissHomeScreenPrompt()}>Dismiss</Button>
+              <Button intent="primary" size="sm" onClick={() => handleInstalledHomeScreenPrompt()}>Got it!</Button>
+            </div>
+          </div>
+        )}
+        {showIosBanner && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-purple-100 border border-purple-300 shadow-xl px-6 py-4 rounded-xl z-50 w-[90%] max-w-md space-y-3 text-center">
+            <h3 className="text-md font-bold text-purple-800">
+              📲 Install EchoDeck on your iPhone
+            </h3>
+            <p className="text-sm text-purple-700">
+              Tap <span className="inline-block"> <svg xmlns="http://www.w3.org/2000/svg" className="inline h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0l-4-4m4 4l4-4m0 4H8a4 4 0 01-4-4V7a4 4 0 014-4h8a4 4 0 014 4v4"/></svg> </span> then &quot;Add to Home Screen&quot;
+            </p>
+            <div className="flex justify-center pt-2">
+              <Button intent="secondary" size="sm" onClick={() => handleDismissIosBanner()}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
