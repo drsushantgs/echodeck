@@ -50,7 +50,7 @@ export default function FeedbackButton() {
         onClick={() => setOpen(!open)}
         className="fixed bottom-6 right-6 bg-brand-teal hover:bg-brand-coral text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm"
       >
-        {sent ? "✅ Sent!" : "👋🏻 Hey there! Something bugging you?"}
+        {sent ? "✅ Sent!" : "💬"}
       </button>
 
       {open && !sent && (
