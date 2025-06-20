@@ -9,6 +9,23 @@ import Button from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
+<style jsx global>{`
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`}</style>
+
 interface Card {
   uuid_id: string;
   question: string;
@@ -476,7 +493,10 @@ export default function StudyClient({ userId, subjectUuid, customUuids }: Props)
           </div>
         )}
         {showIosBanner && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-purple-100 border border-purple-300 shadow-xl px-6 py-4 rounded-xl z-50 w-[90%] max-w-md space-y-3 text-center">
+          <div
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-purple-100 border border-purple-300 shadow-xl px-6 py-4 rounded-xl z-50 w-[90%] max-w-md space-y-3 text-center transition-opacity duration-500 opacity-100 animate-fadeIn"
+            style={{ animation: 'fadeOut 1s ease-in-out 3s forwards' }}
+          >
             <h3 className="text-md font-bold text-purple-800">
               📲 Install EchoDeck on your iPhone
             </h3>
